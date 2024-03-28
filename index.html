@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map with Polyline Simplification</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet.draw CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
+    <style>
+        #map {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button onclick="simplifyPolyline()">Simplify Polyline</button>
+    <button onclick="clearMap()">Clear Map</button>
+
+    <!-- Leaflet and Leaflet.draw Scripts -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+    <!-- Turf.js Script -->
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    
+    <script>
+        var map = L.map('map').setView([51.0447, -114.0719], 10); // Calgary coordinates
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            draw: {
+                polyline: true,
+                polygon: false,
+                rectangle: false,
+                circle: false,
+                marker: false
+            },
+            edit: {
+                featureGroup: drawnItems
+            }
+        });
+        map.addControl(drawControl);
+
+        map.on('draw:created', function (e) {
+            var layer = e.layer;
+            drawnItems.addLayer(layer);
+        });
+
+        function simplifyPolyline() {
+            var polylineLayer = drawnItems.getLayers()[0];
+            if (!polylineLayer) {
+                alert('No polyline drawn.');
+                return;
+            }
+            
+            var polyline = polylineLayer.toGeoJSON();
+            var simplified = turf.simplify(polyline, { tolerance: 0.01, highQuality: false });
+            drawnItems.clearLayers();
+            L.geoJSON(simplified, { color: 'red' }).addTo(map);
+        }
+
+        function clearMap() {
+            drawnItems.clearLayers();
+        }
+    </script>
+</body>
+</html>
